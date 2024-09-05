@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat App</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #ECE5DD;
+        }
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #FFFFFF;
+            border: 1px solid #DADADA;
+        }
+        #nicknameInput {
+            display: flex;
+            padding: 20px;
+            background-color: #075E54;
+            color: white;
+        }
+        #nicknameInput input {
+            flex: 1;
+            padding: 10px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 20px;
+        }
+        #nicknameInput button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #25D366;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        #messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: scroll;
+            background-color: #ECE5DD;
+        }
+        li {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            max-width: 80%;
+            clear: both;
+            list-style-type: none;
+        }
+        .message {
+            background-color: #DCF8C6;
+            align-self: flex-end;
+        }
+        .message.other {
+            background-color: #FFFFFF;
+            align-self: flex-start;
+        }
+        .system-message {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+        }
+        form {
+            display: flex;
+            padding: 10px;
+            background-color: #FFFFFF;
+            border-top: 1px solid #DADADA;
+        }
+        form input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 20px;
+            margin-right: 10px;
+        }
+        form button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #25D366;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        form input[type="file"] {
+            display: none;
+        }
+        #fileLabel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #075E54;
+            color: white;
+            cursor: pointer;
+        }
+        img {
+            max-width: 200px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="nicknameInput">
+            <input id="nickname" placeholder="Enter your nickname" autocomplete="off" />
+            <button id="setNickname">Set Nickname</button>
+        </div>
+        <ul id="messages"></ul>
+        <form id="form" action="">
+            <input id="input" autocomplete="off" placeholder="Type a message" />
+            <label id="fileLabel" for="imageInput">&#128247;</label>
+            <input type="file" id="imageInput" accept="image/*" />
+            <button>Send</button>
+        </form>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+        var form = document.getElementById('form');
+        var input = document.getElementById('input');
+        var nicknameInput = document.getElementById('nickname');
+        var setNicknameButton = document.getElementById('setNickname');
+        var imageInput = document.getElementById('imageInput');
+        var messages = document.getElementById('messages');
+        
+        setNicknameButton.addEventListener('click', function() {
+            var nickname = nicknameInput.value.trim();
+            if (nickname) {
+                socket.emit('set nickname', nickname);
+                nicknameInput.disabled = true;
+                setNicknameButton.disabled = true;
+                document.getElementById('nicknameInput').style.display = 'none';
+            }
+        });
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (input.value) {
+                socket.emit('chat message', input.value);
+                input.value = '';
+            }
+        });
+
+        imageInput.addEventListener('change', function() {
+            var file = imageInput.files[0];
+            if (file) {
+                var formData = new FormData();
+                formData.append('image', file);
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    socket.emit('image message', data.imageUrl);
+                });
+            }
+        });
+
+        socket.on('chat message', function(data) {
+            var item = document.createElement('li');
+            item.textContent = `${data.nickname}: ${data.message}`;
+            item.classList.add('message');
+            if (data.nickname !== nicknameInput.value) {
+                item.classList.add('other');
+            }
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        socket.on('image message', function(data) {
+            var item = document.createElement('li');
+            var img = document.createElement('img');
+            img.src = data.imageUrl;
+            item.textContent = `${data.nickname}: `;
+            item.appendChild(img);
+            item.classList.add('message');
+            if (data.nickname !== nicknameInput.value) {
+                item.classList.add('other');
+            }
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        socket.on('user joined', function(msg) {
+            var item = document.createElement('li');
+            item.classList.add('system-message');
+            item.textContent = msg;
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        socket.on('user left', function(msg) {
+            var item = document.createElement('li');
+            item.classList.add('system-message');
+            item.textContent = msg;
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+    </script>
+</body>
+</html>

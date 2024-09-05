@@ -1,0 +1,102 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    background-color: #ECE5DD;
+}
+#app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #FFFFFF;
+    border: 1px solid #DADADA;
+}
+#nicknameInput {
+    display: flex;
+    padding: 20px;
+    background-color: #075E54;
+    color: white;
+}
+#nicknameInput input {
+    flex: 1;
+    padding: 10px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 20px;
+}
+#nicknameInput button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #25D366;
+    color: white;
+    border-radius: 20px;
+    cursor: pointer;
+}
+#messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: scroll;
+    background-color: #ECE5DD;
+}
+li {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 20px;
+    max-width: 80%;
+    clear: both;
+    list-style-type: none;
+}
+.message {
+    background-color: #DCF8C6;
+    align-self: flex-end;
+}
+.message.other {
+    background-color: #FFFFFF;
+    align-self: flex-start;
+}
+.system-message {
+    text-align: center;
+    color: #888;
+    font-size: 12px;
+}
+form {
+    display: flex;
+    padding: 10px;
+    background-color: #FFFFFF;
+    border-top: 1px solid #DADADA;
+}
+form input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 20px;
+    margin-right: 10px;
+}
+form button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #25D366;
+    color: white;
+    border-radius: 20px;
+    cursor: pointer;
+}
+form input[type="file"] {
+    display: none;
+}
+#fileLabel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #075E54;
+    color: white;
+    cursor: pointer;
+}
+img {
+    max-width: 200px;
+    border-radius: 10px;
+    margin-top: 10px;
+}
