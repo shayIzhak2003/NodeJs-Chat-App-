@@ -3,6 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const multer = require('multer');
 const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const server = http.createServer(app);
@@ -29,6 +30,8 @@ app.post('/upload', upload.single('image'), (req, res) => {
     res.json({ imageUrl: `/uploads/${req.file.filename}` });
 });
 
+const messages = new Map();
+
 io.on('connection', (socket) => {
     console.log('a user connected');
 
@@ -38,11 +41,30 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chat message', (msg) => {
-        io.emit('chat message', { nickname: socket.nickname, message: msg });
+        const id = uuidv4();
+        messages.set(id, { id, nickname: socket.nickname, text: msg.text });
+        io.emit('chat message', { id, nickname: socket.nickname, text: msg.text });
     });
 
     socket.on('image message', (imageUrl) => {
-        io.emit('image message', { nickname: socket.nickname, imageUrl });
+        const id = uuidv4();
+        messages.set(id, { id, nickname: socket.nickname, imageUrl });
+        io.emit('image message', { id, nickname: socket.nickname, imageUrl });
+    });
+
+    socket.on('edit message', (msg) => {
+        if (messages.has(msg.id)) {
+            const message = messages.get(msg.id);
+            message.text = msg.text;
+            io.emit('chat message', message);
+        }
+    });
+
+    socket.on('delete message', (msg) => {
+        if (messages.has(msg.id)) {
+            messages.delete(msg.id);
+            io.emit('message deleted', { id: msg.id });
+        }
     });
 
     socket.on('disconnect', () => {

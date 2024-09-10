@@ -51,6 +51,7 @@
             max-width: 80%;
             clear: both;
             list-style-type: none;
+            position: relative;
         }
         .message {
             background-color: #DCF8C6;
@@ -105,6 +106,29 @@
             border-radius: 10px;
             margin-top: 10px;
         }
+        #error-message {
+            color: red;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 10px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        #error-message.show {
+            opacity: 1;
+        }
+        .message-actions {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+        }
+        .message-actions button {
+            background: none;
+            border: none;
+            color: #075E54;
+            cursor: pointer;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -113,6 +137,7 @@
             <input id="nickname" placeholder="Enter your nickname" autocomplete="off" />
             <button id="setNickname">Set Nickname</button>
         </div>
+        <div id="error-message"></div>
         <ul id="messages"></ul>
         <form id="form" action="">
             <input id="input" autocomplete="off" placeholder="Type a message" />
@@ -130,6 +155,7 @@
         var setNicknameButton = document.getElementById('setNickname');
         var imageInput = document.getElementById('imageInput');
         var messages = document.getElementById('messages');
+        var errorMessage = document.getElementById('error-message');
         
         setNicknameButton.addEventListener('click', function() {
             var nickname = nicknameInput.value.trim();
@@ -143,8 +169,12 @@
 
         form.addEventListener('submit', function(e) {
             e.preventDefault();
+            if (!nicknameInput.value.trim()) {
+                showError('Please set a nickname before sending a message.');
+                return;
+            }
             if (input.value) {
-                socket.emit('chat message', input.value);
+                socket.emit('chat message', { text: input.value });
                 input.value = '';
             }
         });
@@ -161,18 +191,39 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    socket.emit('image message', data.imageUrl);
+                    socket.emit('image message', { imageUrl: data.imageUrl });
                 });
             }
         });
 
         socket.on('chat message', function(data) {
             var item = document.createElement('li');
-            item.textContent = `${data.nickname}: ${data.message}`;
+            item.textContent = `${data.nickname}: ${data.text}`;
             item.classList.add('message');
             if (data.nickname !== nicknameInput.value) {
                 item.classList.add('other');
             }
+
+            var actions = document.createElement('div');
+            actions.classList.add('message-actions');
+            var editButton = document.createElement('button');
+            editButton.textContent = '✏️';
+            editButton.addEventListener('click', function() {
+                var newText = prompt('Edit your message:', data.text);
+                if (newText !== null) {
+                    socket.emit('edit message', { id: data.id, text: newText });
+                }
+            });
+            var deleteButton = document.createElement('button');
+            deleteButton.textContent = '🗑️';
+            deleteButton.addEventListener('click', function() {
+                socket.emit('delete message', { id: data.id });
+            });
+            actions.appendChild(editButton);
+            actions.appendChild(deleteButton);
+            item.appendChild(actions);
+
+            item.dataset.id = data.id;
             messages.appendChild(item);
             window.scrollTo(0, document.body.scrollHeight);
         });
@@ -187,6 +238,25 @@
             if (data.nickname !== nicknameInput.value) {
                 item.classList.add('other');
             }
+
+            var actions = document.createElement('div');
+            actions.classList.add('message-actions');
+            var editButton = document.createElement('button');
+            editButton.textContent = '✏️';
+            editButton.addEventListener('click', function() {
+                // Editing image is not supported
+                alert('Editing images is not supported.');
+            });
+            var deleteButton = document.createElement('button');
+            deleteButton.textContent = '🗑️';
+            deleteButton.addEventListener('click', function() {
+                socket.emit('delete message', { id: data.id });
+            });
+            actions.appendChild(editButton);
+            actions.appendChild(deleteButton);
+            item.appendChild(actions);
+
+            item.dataset.id = data.id;
             messages.appendChild(item);
             window.scrollTo(0, document.body.scrollHeight);
         });
@@ -206,6 +276,14 @@
             messages.appendChild(item);
             window.scrollTo(0, document.body.scrollHeight);
         });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+            setTimeout(function() {
+                errorMessage.classList.remove('show');
+            }, 3000);
+        }
     </script>
 </body>
 </html>
